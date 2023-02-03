@@ -49,17 +49,18 @@
 
                             {{--Pay Now Form--}}
                             <td>
-                                <form id="{{ Qs::hash($uc->id) }}" method="post" class="ajax-pay" action="{{ route('payments.pay_now', Qs::hash($uc->id)) }}">
-                                    @csrf
-                             <div class="row">
-                                 <div class="col-md-7">
-                                     <input min="1" max="{{ $uc->balance ?: $uc->payment->amount }}" id="val-{{ Qs::hash($uc->id) }}" class="form-control" required placeholder="Pay Now" title="Pay Now" name="amt_paid" type="number">
-                                 </div>
-                                 <div class="col-md-5">
-                                     <button data-text="Pay" class="btn btn-danger" type="submit">Pay <i class="icon-paperplane ml-2"></i></button>
-                                 </div>
-                             </div>
-                                </form>
+                                <!-- <form id="{{ Qs::hash($uc->id) }}" method="post" class="ajax-pay" action="{{ route('payments.pay_now', Qs::hash($uc->id)) }}">
+                                    @csrf -->
+                                <div class="row">
+                                    <!-- <div class="col-md-7">
+                                        <input min="1" max="{{ $uc->balance ?: $uc->payment->amount }}" id="val-{{ Qs::hash($uc->id) }}" class="form-control" required placeholder="Pay Now" title="Pay Now" name="amt_paid" type="number">
+                                    </div> -->
+                                    <div class="col-md-12">
+                                        <!-- <button data-text="Pay" class="btn btn-danger" >Pay <i class="icon-paperplane ml-2"></i></button> -->
+                                        <a target="_blank" href="{{ route('payments.std_invoice', Qs::hash($uc->student_id)) }}"> click to pay
+                                    </div>
+                                </div>
+                                <!-- </form> -->
                             </td>
                             {{--Receipt No--}}
                             <td>{{ $uc->ref_no }}</td>
@@ -131,7 +132,7 @@
                                         <div class="dropdown-menu dropdown-menu-left">
 
                                             {{--Reset Payment--}}
-                                            <a id="{{ Qs::hash($cl->id) }}" onclick="confirmReset(this.id)" href="#" class="dropdown-item"><i class="icon-reset"></i> Reset Payment</a>
+                                            <!-- <a id="{{ Qs::hash($cl->id) }}" onclick="confirmReset(this.id)" href="#" class="dropdown-item"><i class="icon-reset"></i> Reset Payment</a> -->
                                             <form method="post" id="item-reset-{{ Qs::hash($cl->id) }}" action="{{ route('payments.reset_record', Qs::hash($cl->id)) }}" class="hidden">@csrf @method('delete')</form>
 
                                             {{--Receipt--}}

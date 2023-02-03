@@ -1,10 +1,6 @@
-@extends('layouts.master')
-@section('page_title', 'Manage System Settings')
-@section('content')
-
-    <div class="card">
+<div class="card">
         <div class="card-header header-elements-inline">
-            <h6 class="card-title font-weight-semibold">Update System Settings </h6>
+            <h6 class="card-title font-weight-semibold">Update System Settungs </h6>
             {!! Qs::getPanelOptions() !!}
         </div>
 
@@ -16,7 +12,7 @@
                         <div class="form-group row">
                             <label class="col-lg-3 col-form-label font-weight-semibold">Name of School <span class="text-danger">*</span></label>
                             <div class="col-lg-9">
-                                <input name="system_name" value="{{ $s['system_name'] }}" required type="text" class="form-control" placeholder="Name of School">
+                                <input name="system_name" value="{{ $d['s']['system_name'] }}" required type="text" class="form-control" placeholder="Name of School">
                             </div>
                         </div>
                         <div class="form-group row">
@@ -25,7 +21,7 @@
                                 <select data-placeholder="Choose..." required name="current_session" id="current_session" class="select-search form-control">
                                     <option value=""></option>
                                     @for($y=date('Y', strtotime('- 3 years')); $y<=date('Y', strtotime('+ 1 years')); $y++)
-                                        <option {{ ($s['current_session'] == (($y-=1).'-'.($y+=1))) ? 'selected' : '' }}>{{ ($y-=1).'-'.($y+=1) }}</option>
+                                        <option {{ ($d['s']['current_session'] == (($y-=1).'-'.($y+=1))) ? 'selected' : '' }}>{{ ($y-=1).'-'.($y+=1) }}</option>
                                     @endfor
                                 </select>
                             </div>
@@ -33,31 +29,31 @@
                         <div class="form-group row">
                             <label class="col-lg-3 col-form-label font-weight-semibold">School Acronym</label>
                             <div class="col-lg-9">
-                                <input name="system_title" value="{{ $s['system_title'] }}" type="text" class="form-control" placeholder="School Acronym">
+                                <input name="system_title" value="{{$d['s']['system_title'] }}" type="text" class="form-control" placeholder="School Acronym">
                             </div>
                         </div>
                         <div class="form-group row">
                             <label class="col-lg-3 col-form-label font-weight-semibold">Phone</label>
                             <div class="col-lg-9">
-                                <input name="phone" value="{{ $s['phone'] }}" type="text" class="form-control" placeholder="Phone">
+                                <input name="phone" value="{{ $d['s']['phone'] }}" type="text" class="form-control" placeholder="Phone">
                             </div>
                         </div>
                         <div class="form-group row">
                             <label class="col-lg-3 col-form-label font-weight-semibold">School Email</label>
                             <div class="col-lg-9">
-                                <input name="system_email" value="{{ $s['system_email'] }}" type="email" class="form-control" placeholder="School Email">
+                                <input name="system_email" value="{{ $d['s']['system_email'] }}" type="email" class="form-control" placeholder="School Email">
                             </div>
                         </div>
                         <div class="form-group row">
                             <label class="col-lg-3 col-form-label font-weight-semibold">School Address <span class="text-danger">*</span></label>
                             <div class="col-lg-9">
-                                <input required name="address" value="{{ $s['address'] }}" type="text" class="form-control" placeholder="School Address">
+                                <input required name="address" value="{{ $d['s']['address'] }}" type="text" class="form-control" placeholder="School Address">
                             </div>
                         </div>
                         <div class="form-group row">
                             <label class="col-lg-3 col-form-label font-weight-semibold">This Term Ends</label>
                             <div class="col-lg-6">
-                                <input name="term_ends" value="{{ $s['term_ends'] }}" type="text" class="form-control date-pick" placeholder="Date Term Ends">
+                                <input name="term_ends" value="{{ $d['s']['term_ends'] }}" type="text" class="form-control date-pick" placeholder="Date Term Ends">
                             </div>
                             <div class="col-lg-3 mt-2">
                                 <span class="font-weight-bold font-italic">M-D-Y or M/D/Y </span>
@@ -66,7 +62,7 @@
                         <div class="form-group row">
                             <label class="col-lg-3 col-form-label font-weight-semibold">Next Term Begins</label>
                             <div class="col-lg-6">
-                                <input name="term_begins" value="{{ $s['term_begins'] }}" type="text" class="form-control date-pick" placeholder="Date Term Ends">
+                                <input name="term_begins" value="{{ $d['s']['term_begins'] }}" type="text" class="form-control date-pick" placeholder="Date Term Ends">
                             </div>
                             <div class="col-lg-3 mt-2">
                                 <span class="font-weight-bold font-italic">M-D-Y or M/D/Y </span>
@@ -76,8 +72,8 @@
                             <label for="lock_exam" class="col-lg-3 col-form-label font-weight-semibold">Lock Exam</label>
                             <div class="col-lg-3">
                                 <select class="form-control select" name="lock_exam" id="lock_exam">
-                                    <option {{ $s['lock_exam'] ? 'selected' : '' }} value="1">Yes</option>
-                                    <option {{ $s['lock_exam'] ?: 'selected' }} value="0">No</option>
+                                    <option {{ $d['s']['lock_exam'] ? 'selected' : '' }} value="1">Yes</option>
+                                    <option {{ $d['s']['lock_exam'] ?: 'selected' }} value="0">No</option>
                                 </select>
                             </div>
                             <div class="col-lg-6">
@@ -89,11 +85,11 @@
                     {{--Fees--}}
                <fieldset>
                    <legend><strong>Next Term Fees</strong></legend>
-                   @foreach($class_types as $ct)
+                   @foreach($d['class_types'] as $ct)
                    <div class="form-group row">
                        <label class="col-lg-3 col-form-label font-weight-semibold">{{ $ct->name }}</label>
                        <div class="col-lg-9">
-                           <input class="form-control" value="{{ $s['next_term_fees_'.strtolower($ct->code)] }}" name="next_term_fees_{{ strtolower($ct->code) }}" placeholder="{{ $ct->name }}" type="text">
+                           <input class="form-control" value="{{ $d['s']['next_term_fees_'.strtolower($ct->code)] }}" name="next_term_fees_{{ strtolower($ct->code) }}" placeholder="{{ $ct->name }}" type="text">
                        </div>
                    </div>
                        @endforeach
@@ -105,7 +101,7 @@
                         <label class="col-lg-3 col-form-label font-weight-semibold">Change Logo:</label>
                         <div class="col-lg-9">
                             <div class="mb-3">
-                                <img style="width: 100px" height="100px" src="{{ $s['logo'] }}" alt="">
+                                <img style="width: 100px" height="100px" src="{{ $d['s']['logo'] }}" alt="">
                             </div>
                             <input name="logo" accept="image/*" type="file" class="file-input" data-show-caption="false" data-show-upload="false" data-fouc>
                         </div>
@@ -121,7 +117,3 @@
             </form>
         </div>
     </div>
-
-    {{--Settings Edit Ends--}}
-
-@endsection

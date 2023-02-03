@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Foundation\Auth\RegistersUsers;
 
+use Illuminate\Support\Str;
+
 class RegisterController extends Controller
 {
     /*
@@ -63,10 +65,16 @@ class RegisterController extends Controller
      */
     protected function create(array $data)
     {
+        // dd($data);
         return User::create([
             'name' => $data['name'],
+            // 'username' => $data['username'],
+            'code' => strtoupper(Str::random(10)),
+            'user_type' => "Parent",
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
+            'remember_token' => Str::random(10),
+            'photo' => 'http://127.0.0.1:8000/global_assets/images/user.png',
         ]);
     }
 }

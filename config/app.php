@@ -160,6 +160,8 @@ return [
         App\Providers\EventServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
         Barryvdh\DomPDF\ServiceProvider::class,
+
+        Unicodeveloper\Paystack\PaystackServiceProvider::class,
     ],
 
     /*
@@ -212,6 +214,7 @@ return [
         'Qs' => App\Helpers\Qs::class,
         'Mk' => App\Helpers\Mk::class,
         'Pay' => App\Helpers\Pay::class,
+        'Paystack' => Unicodeveloper\Paystack\Facades\Paystack::class,
     ],
 
 ];

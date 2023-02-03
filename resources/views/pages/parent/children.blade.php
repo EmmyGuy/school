@@ -40,6 +40,7 @@
                                     <div class="dropdown-menu dropdown-menu-left">
                                         <a href="{{ route('students.show', Qs::hash($s->id)) }}" class="dropdown-item"><i class="icon-eye"></i> View Profile</a>
                                         <a target="_blank" href="{{ route('marks.year_selector', Qs::hash($s->user->id)) }}" class="dropdown-item"><i class="icon-check"></i> Marksheet</a>
+                                        <a target="_blank" href="{{ route('payments.child_payments', Qs::hash($s->user->id)) }}" class="dropdown-item"><i class="icon-cash"></i> Fee Mgt</a>
 
                                     </div>
                                 </div>

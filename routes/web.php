@@ -29,6 +29,9 @@ Route::group(['middleware' => 'auth'], function () {
             Route::put('not_graduated/{id}', 'StudentRecordController@not_graduated')->name('st.not_graduated');
             Route::get('list/{class_id}', 'StudentRecordController@listByClass')->name('students.list')->middleware('teamSAT');
 
+            Route::get('upload', ['as' => 'upload-std', 'uses' => 'StudentRecordController@importFile']);
+            Route::post('uploadExcel', ['as' => 'upload-file', 'uses' => 'StudentRecordController@uploadFile']);
+
             /* Promotions */
             Route::post('promote_selector', 'PromotionController@selector')->name('students.promote_selector');
             Route::get('promotion/manage', 'PromotionController@manage')->name('students.promotion_manage');
@@ -92,6 +95,14 @@ Route::group(['middleware' => 'auth'], function () {
             Route::post('select_class', 'PaymentController@select_class')->name('payments.select_class');
             Route::delete('reset_record/{id}', 'PaymentController@reset_record')->name('payments.reset_record');
             Route::post('pay_now/{id}', 'PaymentController@pay_now')->name('payments.pay_now');
+
+            Route::get('std_invoice/{id}/{year?}', 'CashierController@invoice')->name('payments.std_invoice');
+            Route::post('charge', 'CashierController@store')->name('payment.charge');
+            Route::post('online_pay', 'CashierController@getInvoice')->name('payments.online_pay');
+            Route::post('pay', 'CashierController@redirectToGateway')->name('payments.pay');
+            Route::get('callback', 'CashierController@handleGatewayCallback')->name('payments.callback');
+            Route::get('child_payments/{id}', 'CashierController@myChildPayments')->name('payments.child_payments');
+            Route::get('child_receipts/{id}', 'CashierController@receipts')->name('myChild.receipts');
         });
 
         /*************** Pins *****************/
@@ -133,6 +144,7 @@ Route::group(['middleware' => 'auth'], function () {
             Route::get('show/{id}/{year}', 'MarkController@show')->name('marks.show');
             Route::get('print/{id}/{exam_id}/{year}', 'MarkController@print_view')->name('marks.print');
 
+            
         });
 
         Route::resource('students', 'StudentRecordController');
@@ -168,5 +180,13 @@ Route::group(['namespace' => 'SuperAdmin','middleware' => 'super_admin', 'prefix
 Route::group(['namespace' => 'MyParent','middleware' => 'my_parent',], function(){
 
     Route::get('/my_children', 'MyController@children')->name('my_children');
+    Route::get('pupil_application/{class_id?}', 'MyController@manage')->name('select_class');
+
+    Route::get('form_show/{id}', 'MyController@showApplicationForm')->name('form_show');
+
+    //Route::get('callback', 'CashierController@handleGatewayCallback')->name('payments.callback');
+    // Route::get('child-payments/{id}', 'CashierController@myChildPayments')->name('child.payments');
+
+    // Route::get('child-payments/{id}', 'CashierController@myChildPayments')->name('child.pay,emts');
 
 });

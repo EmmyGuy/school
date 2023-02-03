@@ -16,6 +16,14 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Input;
+use Maatwebsite\Excel\Facades\Excel;
+
+use App\User;
+use App\Models\StudentRecord;
+;
+
 class StudentRecordController extends Controller
 {
     protected $loc, $my_class, $user, $student;
@@ -82,6 +90,118 @@ class StudentRecordController extends Controller
 
         $this->student->createRecord($sr); // Create Student
         return Qs::jsonStoreOk();
+    }
+
+    public function importFile()
+    {
+        return view('pages.student.upload');
+    }
+
+        /**
+     * Uploads an employee list.
+     *
+     * @param Request $request The uploaded file
+     */
+    public function uploadFile(Request $request)
+    {
+        $file = $request->upload_file;
+
+        // foreach ($files as $file)
+        // {
+            // Excel::toArray($file, function ($reader) {
+            //     $rows = $reader->get(['my_class_id', 'section_id', 'adm_no', 'my_parent_id', 'dorm_id', 'dorm_room_no', 'session', 'house', 'age', 'year_admitted', 'grad', 'grad_date', 'email', 'code', 
+            //         'name', 'user_type', 'dob', 'gender', 'phone', 'phone2', 'bg_id', 'state_id', 'lga_id', 'nal_id', 'address', 'remember_token']);
+                    // $rows=$reader->get(['faculty_id','department_name', 'department_code']);
+                $rows = Excel::toArray([], $request->file('upload_file'));
+               
+                    foreach ($rows as $results) {
+
+                        for ($i=1; $i <= count($results); $i++) {
+                            // $department = new Department;
+                            // $department->faculty_id     =  $row->faculty_id;
+                            // $department->department_name  =  $row->department_name;
+                            // $department->department_code  =  $row->department_code;
+                            // $department->save();
+                            //  dd($results[0]);
+                        // if has work or personal email, create user
+                        if ((strlen(trim($results[$i][12])) > 5 )) {
+
+                            // Create user access
+                            $user           = new User;
+                            $user->name     = $results[$i][13];
+                            $user->email    = $results[$i][11];
+                            $user->code     = $results[$i][12];
+                            $user->username = strtoupper(Qs::getAppCode().'/'.'ST'.'/'.$results[$i][8].'/'.($results[$i][2] ?: mt_rand(1000, 99999)));
+                            $user->user_type = $results[$i][14];
+                            $user->dob      = $results[$i][15];
+                            $user->gender   = $results[$i][16];
+                            $user->photo    = Qs::getDefaultUserImage();
+                            $user->phone    = $results[$i][17];
+                            $user->state_id = $results[$i][20];
+                            $user->nal_id   = $results[$i][22];
+                            $user->address  = $results[$i][23];
+                            $user->password = bcrypt('student');
+                            $user->save();
+
+                            // $data['user_type'] = 'student';
+                            // $data['name'] = ucwords($req->name);
+                            // $data['code'] = strtoupper(Str::random(10));
+                            // $data['password'] = Hash::make('student');
+                            // $data['photo'] = Qs::getDefaultUserImage();
+                            // $adm_no = $req->adm_no;
+                            // $data['username'] = strtoupper(Qs::getAppCode().'/'.$ct.'/'.$sr['year_admitted'].'/'.($adm_no ?: mt_rand(1000, 99999)));
+
+                            /// Create employee record
+                            $attachment                     = new StudentRecord();
+                            $attachment->session              = $results[$i][5];
+                            $attachment->user_id               = $user->id;
+                            $attachment->my_class_id       = $results[$i][0];
+                            $attachment->section_id         = $results[$i][1];
+                            $attachment->adm_no          = $results[$i][2];
+                            $attachment->year_admitted     = $results[$i][8];
+                            // $attachment->gender             = ($row->gender == 'male') ? 0: 1;
+                            // $attachment->date_of_birth      = ($row->date_of_birth) ? $row->date_of_birth->toDateTimeString() : null;
+                            // $attachment->date_of_joining    = ($row->date_of_joining) ? $row->date_of_joining->toDateTimeString() : null;
+                            // $attachment->primary_phone      = $row->primary_phone;
+                            // $attachment->secondary_phone    = $row->secondary_phone;
+                            // $attachment->work_email         = $row->work_email;
+                            // $attachment->personal_email     = $row->personal_email;
+                            // $attachment->contact_person     = $row->contact_person;
+                            // $attachment->contact_person_phone  = $row->contact_person_phone;
+                            // $attachment->sss_number         = $row->sss_number;
+                            // $attachment->pagibig_number     = $row->pagibig_number;
+                            // $attachment->tin_number         = $row->tin_number;
+                            // $attachment->philhealth_number  = $row->philhealth_number;
+                            // $attachment->civil_status       = $row->civil_status;
+                            // $attachment->current_address    = $row->current_address;
+                            // $attachment->department_id    = $row->department_id;
+                            // $attachment->title_id         = $row->title_id;
+                            // $attachment->rank_id    = $row->rank_id;
+                            // $attachment->staff_grade_id    = $row->staff_grade_id;
+                            // $attachment->salary_sacle_id    = $row->salary_sacle_id;
+                            // $attachment->staff_level_id    = $row->staff_level_id;
+                            // $attachment->date_of_last_promotion    = $row->date_of_last_promotion;
+                            // $attachment->date_confirmed    = $row->date_confirmed;
+                            // $attachment->blood_group    = $row->blood_group;
+                            // $attachment->employee_type_id    = $row->employee_type_id;
+                            // $attachment->ipppis_id    = $row->ipppis_id;
+                            // $attachment->user_id            = $user->id;
+                            $attachment->save();
+
+                            // Create default role (Employee Role)
+                            // $user_roles = new UserRole();
+                            // $user_roles->user_id = $user->id;
+                            // $user_roles->role_id = 4;
+                            // $user_roles->save();
+                        }
+                    }
+                }
+            // });
+        // }
+
+        \Session::flash('success', ' Employee details uploaded successfully.');
+
+        return redirect()->back();
     }
 
     public function listByClass($class_id)
