@@ -9,6 +9,11 @@
         </div>
 
         <div class="card-body">
+            @if (session('status'))
+                <div class="alert alert-{{(\Session::has('error'))?'danger':'success'}}">
+                    {{ session('status') }}
+                </div>
+            @endif
             <table class="table datatable-button-html5-columns">
                 <thead>
                 <tr>

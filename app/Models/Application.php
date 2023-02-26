@@ -11,7 +11,7 @@ class Application extends Eloquent
     use HasFactory;
 
     protected $fillable = [
-        'session', 'name', 'application_amount', 'opening_date', 'closing_date', 'status'
+        'session', 'name', 'amount', 'openning_date', 'closing_date', 'status', 'applicant_type'
     ];
 
     

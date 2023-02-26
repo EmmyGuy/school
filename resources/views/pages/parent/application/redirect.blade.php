@@ -47,8 +47,7 @@
                             <input type="hidden" name="currency" value="NGN">
                             <input type="hidden" name="reference" id="reference" value="{{ $data['payment_ref'] }}"> {{-- required --}}
                             <input type="hidden" name="key" value="{{ config('paystack.secretKey') }}">
-                            <input type="hidden" name="callback_url" id="callback_url" value="{{ route('payments.callback') }}" >
-
+                            <input type="hidden" name="callback_url" id="callback_url" value="{{ route('payments.applicant_pay_callback') }}" >
                            
                             {{ csrf_field() }} {{-- works only when using laravel 5.1, 5.2 --}}
                         </div>

@@ -114,10 +114,10 @@ class PaymentController extends Controller
         $d['s'] = Setting::all()->flatMap(function($s){
             return [$s->type => $s->description];
         });
+        
+        // $pdf_name = 'Receipt_'.$pr->ref_no;
 
-        $pdf_name = 'Receipt_'.$pr->ref_no;
-
-        return PDF::loadView('pages.support_team.payments.receipt', $d)->download($pdf_name);
+        // return PDF::loadView('pages.support_team.payments.receipt', $d)->download($pdf_name);
 
         //return $this->downloadReceipt('pages.support_team.payments.receipt', $d, $pdf_name);
     }
@@ -186,7 +186,7 @@ class PaymentController extends Controller
         if($payments->count() && $students->count()){
             foreach($payments as $p){
                 foreach($students as $st){
-                    $pr['student_id'] = $st->user_id;
+                    $pr['student_id'] = $st->user_id; //instead of student's ID
                     $pr['payment_id'] = $p->id;
                     $pr['year'] = $this->year;
                     $rec = $this->pay->createRecord($pr);

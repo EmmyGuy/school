@@ -18,9 +18,11 @@
                                   <label for="my_class_id" class="col-form-label font-weight-bold">Class Applying for:</label>
                                   <select required id="my_class_id" name="my_class_id" class="form-control select">
                                       <option value="">Select Class</option>
-                                      @foreach($my_classes as $c)
+                                      <option value=pre_school>Nursery and Primary</option>
+                                      <option value=high_school>Starlet High</option>
+                                      <!-- @foreach($my_classes as $c)
                                           <option {{ ($selected && $my_class_id == $c->id) ? 'selected' : '' }} value="{{ $c->id }}">{{ $c->name }}</option>
-                                      @endforeach
+                                      @endforeach -->
                                   </select>
                               </div>
                           </div>
@@ -47,31 +49,47 @@
                         <th>S/N</th>
                         <th>Photo</th>
                         <th>Name</th>
-                        <th>ADM_No</th>
-                        <th>Payments</th>
+                        <th>Application_No</th>
+                        <th>Session </th>
+                        <th>Class Applied </th>
+                        <th>Payments status</th>
+                        <th>Application status</th>
+
+                        <th>Actions</th>
                     </tr>
                     </thead>
                     <tbody>
                     @foreach($students as $s)
                         <tr>
                             <td>{{ $loop->iteration }}</td>
-                            <td><img class="rounded-circle" style="height: 40px; width: 40px;" src="{{ $s->user->photo }}" alt="photo"></td>
-                            <td>{{ $s->user->name }}</td>
-                            <td>{{ $s->adm_no }}</td>
+                            <td><img class="rounded-circle" style="height: 40px; width: 40px;" src="{{ $s->passport }}" alt="photo"></td>
+                            <td>{{ $s->fullname }}</td>
+                            <td>{{ $s->application_no }}</td>
+                            <td>{{ $s->session }}</td>
+                            <td>{{ $s->class_name }}</td>
                             <td>
-                                <div class="dropdown">
-                                    <a href="#" class=" btn btn-danger" data-toggle="dropdown"> Manage Payments <i class="icon-arrow-down5"></i>
-                                    </a>
-                            <div class="dropdown-menu dropdown-menu-left">
-                                <a href="{{ route('payments.invoice', [Qs::hash($s->user_id)]) }}" class="dropdown-item">All Payments</a>
-                                @foreach(Pay::getYears($s->user_id) as $py)
-                                @if($py)
-                                    <a href="{{ route('payments.invoice', [Qs::hash($s->user_id), $py]) }}" class="dropdown-item">{{ $py }}</a>
-                                @endif
-                                @endforeach
-                            </div>
-                                </div>
+                                {{ $s->payment_status }}
                             </td>
+                            <td>
+                                {{ $s->application_status }}
+                            </td>
+
+                            <td class="text-center">
+                            <div class="list-icons">
+                                <div class="dropdown">
+                                    <a href="#" class="list-icons-item" data-toggle="dropdown">
+                                        <i class="icon-menu9"></i>
+                                    </a>
+
+                                    <div class="dropdown-menu dropdown-menu-left">
+                                        <a href="{{ route('students.show', Qs::hash($s->id)) }}" class="dropdown-item"><i class="icon-eye"></i> View Profile</a>
+                                        <a data-id="{{ (Qs::hash($s->id)) }}" class="dropdown-item edit_application"><i class="icon-check"></i> Edit</a>
+                                        <a  href="{{ route('payments.applicant_payments', Qs::hash($s->id)) }}" class="dropdown-item"><i class="icon-cash"></i> pay now</a>
+
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
 
                         </tr>
                     @endforeach
@@ -100,6 +118,8 @@
         </div>
     <!-- Modal End -->
 
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>  -->
+
     <script>
     $(document).ready(function() {
         // alert('here!');
@@ -121,7 +141,7 @@
             var Id = $('#my_class_id').val();
             var url =  "{!! route('form_show',  ['id' => ':Id']) !!}";
             url = url.replace(':Id', Id);
-            console.log(Id);
+            console.log(url);
 
             $.get(url, function (data) {
                 $(".modal-body").html(data);
@@ -138,6 +158,77 @@
                 // });
                 
             })
+        });
+
+        $('body').on('click', '.edit_application', function (e) {
+            e.preventDefault();
+
+            $('#btn-save').val("Amit Applicant");
+            $('#userForm').trigger("reset");
+            $(".modal-body").html("");
+            $('#userCrudModal').html("Admit Applicant");
+
+            var Id = $(this).attr("data-id"); ;
+            var url =  "{!! route('form_show',  ['id' => ':Id']) !!}";
+            url = url.replace(':Id', Id);
+
+            $.get(url, function (data) {
+                $(".modal-body").html(data);
+                $('#ajax-crud-modal').modal();
+            })
+
+        });
+
+        $('body').on('click', '.btn-save', function (e) {
+            e.preventDefault();
+
+            var x = document.getElementById("check").required; 
+
+            var data =  $('#ajax_reg').serialize();
+
+            var x = document.getElementById("check");
+
+
+            if (x.checked == true) {
+                document.getElementById("certification").value = true;
+            }else{
+                document.getElementById("certification").value = false;
+            }
+            // var oTable = $('#street_table').DataTable();
+            console.log(data);
+            if($('#ajax_reg').valid()){
+                var actionType = $('#btn-save').val();
+                $('#btn-save').html('Sending..');
+
+                $.ajax({
+                    data: new FormData($('#ajax_reg')[0]),
+                    url: '{!! route("pupil_application_save") !!}',
+                    type: "POST",
+                    dataType: 'json',
+                    contentType: false,
+                    processData: false,
+                    success: function (data) {
+                        if(data)
+                        {
+                            swal({
+                                title: "Good job!",
+                                text: "Record Added/Edited Successfully!",
+                                icon: "success",
+                            });
+                        $('#userForm').trigger("reset");
+                        $('#ajax-crud-modal').modal('hide');
+                        $('#btn-save').html('Save Changes');
+                        }
+
+                    },
+                    error: function (data) {
+                        console.log('Error:', data);
+                        $('#btn-save').html('Save Changes');
+                    }
+                });
+            }else{
+                // alert('invalid!');
+            }
         });
 
     });

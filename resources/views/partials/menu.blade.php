@@ -133,6 +133,56 @@
                     </li>
                 @endif
 
+                {{--Manage Students--}}
+                @if(Qs::userIsTeamSAT())
+                    <li class="nav-item nav-item-submenu {{ in_array(Route::currentRouteName(), ['students.create', 'students.list', 'students.edit', 'students.show', 'students.promotion', 'students.promotion_manage', 'students.graduated']) ? 'nav-item-expanded nav-item-open' : '' }} ">
+                        <a href="#" class="nav-link"><i class="icon-users"></i> <span> Applicants</span></a>
+
+                        <ul class="nav nav-group-sub" data-submenu-title="Manage Applicant">
+                            {{--Process Applicantion--}}
+                            @if(Qs::userIsTeamSA())
+                                <li class="nav-item">
+                                    <a href="{{ url('application_mgt') }}"
+                                       class="nav-link {{ (Route::is('application')) ? 'active' : '' }}"> Applicantions</a>
+                                </li>
+                            @endif
+                            
+                            @if(Qs::userIsTeamSA())
+                                <li class="nav-item">
+                                    <a href="{{ route('application.manage') }}"
+                                       class="nav-link {{ (Route::is('application.manage')) ? 'active' : '' }}">Process Applicant</a>
+                                </li>
+                            @endif
+
+                            <!-- {{--Student Information--}}
+                            <li class="nav-item nav-item-submenu {{ in_array(Route::currentRouteName(), ['students.list', 'students.edit', 'students.show']) ? 'nav-item-expanded' : '' }}">
+                                <a href="#" class="nav-link {{ in_array(Route::currentRouteName(), ['students.list', 'students.edit', 'students.show']) ? 'active' : '' }}">Student Information</a>
+                                <ul class="nav nav-group-sub">
+                                    @foreach(App\Models\MyClass::orderBy('name')->get() as $c)
+                                        <li class="nav-item"><a href="{{ route('students.list', $c->id) }}" class="nav-link ">{{ $c->name }}</a></li>
+                                    @endforeach
+                                </ul>
+                            </li> -->
+
+                            <!-- @if(Qs::userIsTeamSA())
+
+                            {{--Student Promotion--}}
+                            <li class="nav-item nav-item-submenu {{ in_array(Route::currentRouteName(), ['students.promotion', 'students.promotion_manage']) ? 'nav-item-expanded' : '' }}"><a href="#" class="nav-link {{ in_array(Route::currentRouteName(), ['students.promotion', 'students.promotion_manage' ]) ? 'active' : '' }}">Student Promotion</a>
+                            <ul class="nav nav-group-sub">
+                                <li class="nav-item"><a href="{{ route('students.promotion') }}" class="nav-link {{ in_array(Route::currentRouteName(), ['students.promotion']) ? 'active' : '' }}">Promote Students</a></li>
+                                <li class="nav-item"><a href="{{ route('students.promotion_manage') }}" class="nav-link {{ in_array(Route::currentRouteName(), ['students.promotion_manage']) ? 'active' : '' }}">Manage Promotions</a></li>
+                            </ul>
+
+                            </li>
+
+                            {{--Student Graduated--}}
+                            <li class="nav-item"><a href="{{ route('students.graduated') }}" class="nav-link {{ in_array(Route::currentRouteName(), ['students.graduated' ]) ? 'active' : '' }}">Students Graduated</a></li>
+                                @endif -->
+
+                        </ul>
+                    </li>
+                @endif
+
                 @if(Qs::userIsTeamSA())
                     {{--Manage Users--}}
                     <li class="nav-item">

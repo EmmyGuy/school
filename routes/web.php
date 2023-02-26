@@ -40,6 +40,17 @@ Route::group(['middleware' => 'auth'], function () {
             Route::get('promotion/{fc?}/{fs?}/{tc?}/{ts?}', 'PromotionController@promotion')->name('students.promotion');
             Route::post('promote/{fc}/{fs}/{tc}/{ts}', 'PromotionController@promote')->name('students.promote');
 
+            /* Application processing */
+            Route::get('manage_applicants/{class_id?}', 'StudentRecordController@processApplication')->name('application.manage');
+            Route::post('select_year', 'StudentRecordController@select_year')->name('application.select_year');
+            Route::get('show_applicants/{year}', 'StudentRecordController@showApplicants')->name('applicants.show');
+
+            Route::get('applicant_show/{id}', 'StudentRecordController@showApplicant')->name('applicant_show');
+            // Route::get('applicant_admit/{id}', 'StudentRecordController@admitApplicant')->name('applicat.admit');
+
+            Route::get('applicant_admit/{id}', 'StudentRecordController@AdmitApplication')->name('applicant_admit');
+            Route::post('application_save', 'StudentRecordController@saveAdmition')->name('applicant_admition_save');
+
         });
 
         /*************** Users *****************/
@@ -101,8 +112,18 @@ Route::group(['middleware' => 'auth'], function () {
             Route::post('online_pay', 'CashierController@getInvoice')->name('payments.online_pay');
             Route::post('pay', 'CashierController@redirectToGateway')->name('payments.pay');
             Route::get('callback', 'CashierController@handleGatewayCallback')->name('payments.callback');
+            Route::get('applicant_callback', 'CashierController@applicantHandleGatewayCallback')->name('payments.applicant_pay_callback');
+
             Route::get('child_payments/{id}', 'CashierController@myChildPayments')->name('payments.child_payments');
             Route::get('child_receipts/{id}', 'CashierController@receipts')->name('myChild.receipts');
+
+            Route::get('applicant_payments/{id}', 'CashierController@applicantPayments')->name('payments.applicant_payments');
+
+            Route::get('all_payments', 'CashierController@paymentReports')->name('payments.payment_reports');
+            Route::get('view_selected_payments', 'CashierController@paymentReports')->name('payments.view_selected_payments');
+            Route::post('all_payments/fetch', 'CashierController@getPaymentReports')->name('payments.all_fetch');
+
+
         });
 
         /*************** Pins *****************/
@@ -137,6 +158,7 @@ Route::group(['middleware' => 'auth'], function () {
                 Route::post('selector', 'MarkController@selector')->name('marks.selector');
                 Route::get('bulk/{class?}/{section?}', 'MarkController@bulk')->name('marks.bulk');
                 Route::post('bulk', 'MarkController@bulk_select')->name('marks.bulk_select');
+                
             });
 
             Route::get('select_year/{id}', 'MarkController@year_selector')->name('marks.year_selector');
@@ -157,6 +179,8 @@ Route::group(['middleware' => 'auth'], function () {
         Route::resource('dorms', 'DormController');
         Route::resource('payments', 'PaymentController');
 
+        Route::resource('application_mgt', 'ApplicationController');
+
     });
 
     /************************ AJAX ****************************/
@@ -164,6 +188,7 @@ Route::group(['middleware' => 'auth'], function () {
         Route::get('get_lga/{state_id}', 'AjaxController@get_lga')->name('get_lga');
         Route::get('get_class_sections/{class_id}', 'AjaxController@get_class_sections')->name('get_class_sections');
         Route::get('get_class_subjects/{class_id}', 'AjaxController@get_class_subjects')->name('get_class_subjects');
+        
     });
 
 });
@@ -182,7 +207,10 @@ Route::group(['namespace' => 'MyParent','middleware' => 'my_parent',], function(
     Route::get('/my_children', 'MyController@children')->name('my_children');
     Route::get('pupil_application/{class_id?}', 'MyController@manage')->name('select_class');
 
-    Route::get('form_show/{id}', 'MyController@showApplicationForm')->name('form_show');
+    Route::get('form_show/{id}{applicantId?}', 'MyController@showApplicationForm')->name('form_show');
+
+    Route::post('application_save', 'MyController@saveApplication')->name('pupil_application_save');
+    Route::post('application-edit', 'MyController@EditApplication')->name('application_edit');
 
     //Route::get('callback', 'CashierController@handleGatewayCallback')->name('payments.callback');
     // Route::get('child-payments/{id}', 'CashierController@myChildPayments')->name('child.payments');

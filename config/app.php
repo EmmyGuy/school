@@ -162,6 +162,7 @@ return [
         Barryvdh\DomPDF\ServiceProvider::class,
 
         Unicodeveloper\Paystack\PaystackServiceProvider::class,
+        yajra\Datatables\DatatablesServiceProvider::class,
     ],
 
     /*
@@ -215,6 +216,8 @@ return [
         'Mk' => App\Helpers\Mk::class,
         'Pay' => App\Helpers\Pay::class,
         'Paystack' => Unicodeveloper\Paystack\Facades\Paystack::class,
+        'Input' => Illuminate\Support\Facades\Input::class,
+        'Datatables' => yajra\Datatables\Datatables::class,
     ],
 
 ];

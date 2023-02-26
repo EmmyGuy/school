@@ -82,7 +82,7 @@
                                   </div>
                                 </div>
                                 <br>
-                                <label for="card-element">@lang('Card Number')</label>
+                                <label for="card-element"></label>
                                 <div id="card-element">
                                 <!-- A Stripe Element will be inserted here. -->
                                 </div>
@@ -101,7 +101,6 @@
         </div>
     </div>
 </div>
-<script src="https://js.stripe.com/v3/"></script>
 
 <script>
     jQuery(document).ready(function($){
@@ -109,6 +108,8 @@
         document.getElementById("fullpay").value = false;
         var amount = document.getElementById("amount");
         amount.readOnly = true;
+
+        document.getElementById('paymet_id').value = $(this).find(':selected').data("id");
 
       $('#get-invoice').click(function(){
         $.ajax({
@@ -118,7 +119,6 @@
           dataType: 'json',
           success: function (data) {
 
-            console.log(data.url);
             $('#download_invoce').html(data);
           },
           error: function (data) {
@@ -134,6 +134,7 @@
   function myFunction() {
         var x = document.getElementById("fulpay");
         var amount = document.getElementById("amount");
+        
         if (x.checked == true) {
           amount.value = '';
           document.getElementById("fullpay").value = true;

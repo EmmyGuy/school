@@ -6,6 +6,7 @@ use App\Helpers\Qs;
 use App\Helpers\Mk;
 use App\Http\Requests\Student\StudentRecordCreate;
 use App\Http\Requests\Student\StudentRecordUpdate;
+use App\Repositories\SettingRepo;
 use App\Repositories\LocationRepo;
 use App\Repositories\MyClassRepo;
 use App\Repositories\StudentRepo;
@@ -21,14 +22,16 @@ use Illuminate\Support\Facades\Input;
 use Maatwebsite\Excel\Facades\Excel;
 
 use App\User;
+
+use App\Models\ApplicantRecord;
 use App\Models\StudentRecord;
-;
+use DB;
 
 class StudentRecordController extends Controller
 {
     protected $loc, $my_class, $user, $student;
 
-   public function __construct(LocationRepo $loc, MyClassRepo $my_class, UserRepo $user, StudentRepo $student)
+   public function __construct(LocationRepo $loc, SettingRepo $setting, MyClassRepo $my_class, UserRepo $user, StudentRepo $student)
    {
        $this->middleware('teamSA', ['only' => ['edit','update', 'reset_pass', 'create', 'store', 'graduated'] ]);
        $this->middleware('super_admin', ['only' => ['destroy',] ]);
@@ -37,6 +40,8 @@ class StudentRecordController extends Controller
         $this->my_class = $my_class;
         $this->user = $user;
         $this->student = $student;
+        $this->setting = $setting;
+
    }
 
     public function reset_pass($st_id)
@@ -92,6 +97,58 @@ class StudentRecordController extends Controller
         return Qs::jsonStoreOk();
     }
 
+    public function saveAdmition(StudentRecordCreate $req)
+    {
+        // dd($req);
+       $data =  $req->only(Qs::getUserRecord());
+       $sr =  $req->only(Qs::getStudentData());
+
+        $ct = $this->my_class->findTypeByClass($req->my_class_id)->code;
+       /* $ct = ($ct == 'J') ? 'JSS' : $ct;
+        $ct = ($ct == 'S') ? 'SS' : $ct;*/
+
+        $data['user_type'] = 'student';
+        $data['name'] = ucwords($req->name);
+        $data['code'] = strtoupper(Str::random(10));
+        $data['password'] = Hash::make('student');
+        $data['photo'] = $req->photo_url;
+        $adm_no = $req->adm_no;
+        $data['username'] = strtoupper(Qs::getAppCode().'/'.$ct.'/'.$sr['year_admitted'].'/'.($adm_no ?: mt_rand(1000, 99999)));
+
+        if($req->hasFile('photo')) {
+            $photo = $req->file('photo');
+            $f = Qs::getFileMetaData($photo);
+            $f['name'] = $sr->user->code . '.' . $f['ext'];
+            $f['path'] = $photo->storeAs(Qs::getUploadPath('student').$data['code'], $f['name']);
+            $data['photo'] = asset('storage/' . $f['path']);
+        }
+
+        $user = $this->user->create($data); // Create User
+
+        $sr['adm_no'] = $data['username'];
+        $sr['user_id'] = $user->id;
+        $sr['session'] = Qs::getSetting('current_session');
+
+        try {
+            
+            $std = $this->student->createRecord($sr); // Create Student;
+
+            $applicant = ApplicantRecord::where('id', $req->applicant_id)->first();
+            $applicant->application_status = "admitted";
+            $applicant->admission_id  = $std->id;
+            $applicant->save();
+
+            return Qs::jsonStoreOk();
+        } catch (Throwable $e) {
+            report($e);
+    
+            return response()->json(false);
+        }
+
+        return response()->json(true);
+    }
+
+
     public function importFile()
     {
         return view('pages.student.upload');
@@ -140,7 +197,7 @@ class StudentRecordController extends Controller
                             $user->state_id = $results[$i][20];
                             $user->nal_id   = $results[$i][22];
                             $user->address  = $results[$i][23];
-                            $user->password = bcrypt('student');
+                            $user->password  = bcrypt('student');
                             $user->save();
 
                             // $data['user_type'] = 'student';
@@ -152,13 +209,13 @@ class StudentRecordController extends Controller
                             // $data['username'] = strtoupper(Qs::getAppCode().'/'.$ct.'/'.$sr['year_admitted'].'/'.($adm_no ?: mt_rand(1000, 99999)));
 
                             /// Create employee record
-                            $attachment                     = new StudentRecord();
-                            $attachment->session              = $results[$i][5];
-                            $attachment->user_id               = $user->id;
-                            $attachment->my_class_id       = $results[$i][0];
-                            $attachment->section_id         = $results[$i][1];
-                            $attachment->adm_no          = $results[$i][2];
-                            $attachment->year_admitted     = $results[$i][8];
+                            $attachment                   = new StudentRecord();
+                            $attachment->session          = $results[$i][5];
+                            $attachment->user_id          = $user->id;
+                            $attachment->my_class_id      = $results[$i][0];
+                            $attachment->section_id       = $results[$i][1];
+                            $attachment->adm_no           = $results[$i][2];
+                            $attachment->year_admitted    = $results[$i][8];
                             // $attachment->gender             = ($row->gender == 'male') ? 0: 1;
                             // $attachment->date_of_birth      = ($row->date_of_birth) ? $row->date_of_birth->toDateTimeString() : null;
                             // $attachment->date_of_joining    = ($row->date_of_joining) ? $row->date_of_joining->toDateTimeString() : null;
@@ -199,7 +256,7 @@ class StudentRecordController extends Controller
             // });
         // }
 
-        \Session::flash('success', ' Employee details uploaded successfully.');
+        \Session::flash('success', ' students details uploaded successfully.');
 
         return redirect()->back();
     }
@@ -300,6 +357,126 @@ class StudentRecordController extends Controller
         $this->user->delete($sr->user->id);
 
         return back()->with('flash_success', __('msg.del_ok'));
+    }
+
+    public function processApplication($class_id = NULL)
+    {
+        $d['my_classes'] = $this->my_class->all();
+        $d['current_session'] = 
+        $d['selected'] = false;
+
+        if($class_id){
+
+            if($st->count() < 1){
+                return Qs::goWithDanger('payments.manage');
+            }
+            $d['selected'] = true;
+            $d['my_class_id'] = $class_id;
+        }
+
+        return view('pages.support_team.application.manage', $d);
+    }
+
+    public function select_year(Request $req)
+    {
+        return Qs::goToRoute(['applicants.show', $req->current_session]);
+    }
+
+    public function showApplicants($year)
+    {
+        $d['applicants'] = DB::table( 'applicant_records' )
+            ->join('my_classes', 'my_classes.id', '=', 'applicant_records.my_class_id')
+            ->where('session', '=', $year)
+            ->select('applicant_records.id','applicant_records.application_no', 'applicant_records.fullname',
+                    'applicant_records.passport', 'applicant_records.application_status', 'applicant_records.session',
+                    'my_classes.name as class_name', 'applicant_records.*',
+                    DB::raw('(CASE 
+                            WHEN (SELECT count(*) from applicant_payments where applicant_id = applicant_records.id AND status = "paid" ) > 0 THEN "Paid" 
+                            ELSE "Pending" 
+                            END) AS payment_status'),
+                    DB::raw('(CASE 
+                                WHEN (SELECT count(*) from student_records where admission_id = student_records.id ) > 0 THEN "Admitted" 
+                                ELSE "Pending" 
+                                END) AS admission_status'))->get();
+
+        if((count($d) < 1)){
+            return Qs::goWithDanger('payments.index');
+        }
+
+            // dd($d['applicants']);
+
+        $d['selected'] = true;
+        $d['my_classes'] = $this->my_class->all();
+        // $d['years'] = $this->pay->getPaymentYears();
+        $d['year'] = $year;
+
+        return view('pages.support_team.application.manage', $d);
+
+    }
+
+    public function showApplicant($id)
+    {
+        $sr_id = $id;
+        // $sr_id = Qs::decodeHash($sr_id);
+        if(!$sr_id){return Qs::goWithDanger();}
+
+        $data['sr'] = ApplicantRecord::where(['applicant_records.id' => $sr_id])
+                                      ->join('users', 'users.id', '=', 'applicant_records.my_parent_id')
+                                      ->join('lgas', 'lgas.id', '=', 'applicant_records.lga_id')
+                                      ->join('blood_groups', 'blood_groups.id', '=', 'applicant_records.bg_id')
+                                      ->join('states', 'states.id', '=', 'lgas.state_id')
+                                      ->join('nationalities', 'nationalities.id', '=', 'applicant_records.nal_id')
+                                      ->join('my_classes', 'my_classes.id', '=', 'applicant_records.my_class_id')
+                                      ->select('my_classes.name As class_name','lgas.name As lga', 'applicant_records.*',
+                                       'states.name As state', 'users.name As parent_name', 'users.phone As parent_phone',
+                                        'blood_groups.name AS blood_gp', 'nationalities.name AS nation')
+                                      ->first();
+        // dd( $data['sr']);
+        /* Prevent Other Students/Parents from viewing Profile of others */
+        if(Auth::user()->id != $data['sr']->user_id && !Qs::userIsTeamSAT() && !Qs::userIsMyChild($data['sr']->user_id, Auth::user()->id)){
+            return redirect(route('dashboard'))->with('pop_error', __('msg.denied'));
+        }
+
+        return view('pages.support_team.application.show', $data);
+    }
+
+    public function AdmitApplication($id)
+    {
+        $sr_id = $id;
+        // $sr_id = Qs::decodeHash($sr_id);
+        if(!$sr_id){return Qs::goWithDanger();}
+
+        $s = $this->setting->all();
+        $d['class_types'] = $this->my_class->getTypes();
+        $data['s'] = $s->flatMap(function($s){
+            return [$s->type => $s->description];
+        });
+
+        $data['applicant'] = ApplicantRecord::where(['applicant_records.id' => $sr_id])
+                                      ->join('users', 'users.id', '=', 'applicant_records.my_parent_id')
+                                      ->join('lgas', 'lgas.id', '=', 'applicant_records.lga_id')
+                                      ->join('blood_groups', 'blood_groups.id', '=', 'applicant_records.bg_id')
+                                      ->join('states', 'states.id', '=', 'lgas.state_id')
+                                      ->join('nationalities', 'nationalities.id', '=', 'applicant_records.nal_id')
+                                      ->join('my_classes', 'my_classes.id', '=', 'applicant_records.my_class_id')
+                                      ->select('my_classes.name As class_name','lgas.id As lga_id', 'lgas.name As lga_name', 'applicant_records.*',
+                                       'states.id As state_id', 'users.name As parent_name', 'users.phone As parent_phone', 'applicant_records.id As applicant_id',
+                                        'blood_groups.name AS blood_gp', 'blood_groups.id AS bg_id', 'nationalities.name AS nation')
+                                      ->first();
+
+        $data['my_classes'] = $this->my_class->all();
+        $data['dorms'] = $this->student->getAllDorms();
+        $data['parents'] = $this->user->getUserByType('parent');
+        $data['states'] = $this->loc->getStates();
+        $data['nationals'] = $this->loc->getAllNationals();
+        // dd( $data['applicant']);
+
+        /* Prevent Other Students/Parents from viewing Profile of others */
+        // if(Auth::user()->id != $data['applicant']->user_id && !Qs::userIsTeamSAT() && !Qs::userIsMyChild($data['applicant']->user_id, Auth::user()->id)){
+        //     return redirect(route('dashboard'))->with('pop_error', __('msg.denied'));
+        // }
+
+        return view('pages.support_team.application.admit', compact('data'))->render();
     }
 
 }

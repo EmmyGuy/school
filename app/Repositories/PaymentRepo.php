@@ -94,6 +94,11 @@ class PaymentRepo
         return Receipt::Create($data);
     }
 
+    public function createApplicationReceipt($data)
+    {
+        return Receipt::Create($data);
+    }
+
     public function deleteReceipts($data)
     {
         return Receipt::where($data)->delete();

@@ -14,4 +14,9 @@ class Receipt extends Eloquent
         return $this->belongsTo(PaymentRecord::class, 'pr_id');
     }
 
+    public function Ar()
+    {
+        return $this->belongsTo(ApplicantPayment::class, 'pr_id');
+    }
+
 }
