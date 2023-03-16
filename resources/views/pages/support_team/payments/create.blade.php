@@ -2,6 +2,9 @@
 @section('page_title', 'Create Payment')
 @section('content')
 
+<head>
+        <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+</head>
     <div class="card">
         <div class="card-header header-elements-inline">
             <h6 class="card-title">Create Payment</h6>
@@ -23,7 +26,7 @@
                         <div class="form-group row">
                             <label for="my_class_id" class="col-lg-3 col-form-label font-weight-semibold">Class </label>
                             <div class="col-lg-9">
-                                <select class="form-control select-search" name="my_class_id" id="my_class_id">
+                                <select class="form-control select2-multiple" name="class[]" id="my_class_id" multiple="true    ">
                                     <option value="">All Classes</option>
                                     @foreach($my_classes as $c)
                                         <option {{ old('my_class_id') == $c->id ? 'selected' : '' }} value="{{ $c->id }}">{{ $c->name }}</option>
@@ -35,9 +38,9 @@
                         <div class="form-group row">
                             <label for="method" class="col-lg-3 col-form-label font-weight-semibold">Payment Method</label>
                             <div class="col-lg-9">
-                                <select class="form-control select" name="method" id="method">
+                                <select class="form-control " name="method" id="method" >
                                     <option selected value="Cash">Cash</option>
-                                    <option disabled value="Online">Online</option>
+                                    <option  value="Online">Online</option>
                                 </select>
                             </div>
                         </div>
@@ -66,5 +69,17 @@
     </div>
 
     {{--Payment Create Ends--}}
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            // Select2 Multiple
+            $('.select2-multiple').select2({
+                placeholder: "Select",
+                allowClear: true
+            });
+
+        });
+    </script>
 
 @endsection

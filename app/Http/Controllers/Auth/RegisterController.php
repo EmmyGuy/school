@@ -70,7 +70,7 @@ class RegisterController extends Controller
             'name' => $data['name'],
             // 'username' => $data['username'],
             'code' => strtoupper(Str::random(10)),
-            'user_type' => "Parent",
+            'user_type' => "parent",
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
             'remember_token' => Str::random(10),

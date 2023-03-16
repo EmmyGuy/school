@@ -49,7 +49,7 @@
 
                             {{--Pay Now Form--}}
                             <td>
-                                <a target="_blank" class="btn btn-success" href="{{ route('payments.std_invoice', Qs::hash($uc->student_id)) }}"> click to pay
+                                <a class="btn btn-success" href="{{ route('payments.std_invoice', Qs::hash($uc->student_id)) }}"> click to pay
                             </td>
                             {{--Receipt No--}}
                             <td>{{ $uc->ref_no }}</td>

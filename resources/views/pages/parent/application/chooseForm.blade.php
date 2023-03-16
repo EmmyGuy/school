@@ -156,7 +156,6 @@
                 //         swal('Success: record updated successfully!');
                 //     }
                 // });
-                
             })
         });
 

@@ -49,7 +49,12 @@ Route::group(['middleware' => 'auth'], function () {
             // Route::get('applicant_admit/{id}', 'StudentRecordController@admitApplicant')->name('applicat.admit');
 
             Route::get('applicant_admit/{id}', 'StudentRecordController@AdmitApplication')->name('applicant_admit');
-            Route::post('application_save', 'StudentRecordController@saveAdmition')->name('applicant_admition_save');
+            Route::post('application_save', 'StudentRecordController@saveAdmission')->name('applicant_admition_save');
+
+            Route::get('notify', 'StudentRecordController@notification')->name('students.notify'); 
+            Route::post('notify/fetch', 'StudentRecordController@getStudents')->name('students.fetch_students');
+            Route::post('notify_students', 'StudentRecordController@nottifyStudents')->name('students.notify_students_via_sms');
+
 
         });
 
@@ -122,6 +127,12 @@ Route::group(['middleware' => 'auth'], function () {
             Route::get('all_payments', 'CashierController@paymentReports')->name('payments.payment_reports');
             Route::get('view_selected_payments', 'CashierController@paymentReports')->name('payments.view_selected_payments');
             Route::post('all_payments/fetch', 'CashierController@getPaymentReports')->name('payments.all_fetch');
+
+            Route::get('defaulters', 'CashierController@defaulters')->name('payments.defaulters');
+            Route::post('all_defaulters/fetch', 'CashierController@getDefaulterReports')->name('payments.all_defaulters');
+            Route::post('notify_defaulters', 'CashierController@nottifyDefaulters')->name('payments.notify_defaulter_via_sms');
+
+
 
 
         });

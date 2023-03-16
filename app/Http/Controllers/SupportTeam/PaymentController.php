@@ -74,9 +74,9 @@ class PaymentController extends Controller
 
         $d['sr'] = $this->student->findByUserId($st_id)->first();
         $pr = $inv->get();
-        $d['uncleared'] = $pr->where('paid', 0);
+        $d['uncleared'] = $pr->where('balance', '>', 0) ;
         $d['cleared'] = $pr->where('paid', 1);
-
+        
         return view('pages.support_team.payments.invoice', $d);
     }
 
@@ -202,9 +202,15 @@ class PaymentController extends Controller
     public function store(PaymentCreate $req)
     {
         $data = $req->all();
-        $data['year'] = $this->year;
-        $data['ref_no'] = Pay::genRefCode();
-        $this->pay->create($data);
+        
+        foreach ($data['class'] as $class_id){ 
+            // Code Here
+            // dd($class_id);
+            $data['my_class_id']  = $class_id;
+            $data['year'] = $this->year;
+            $data['ref_no'] = Pay::genRefCode();
+            $this->pay->create($data);
+            }
 
         return Qs::jsonStoreOk();
     }

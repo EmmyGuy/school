@@ -53,20 +53,22 @@
 
                 {{--Academics--}}
                 @if(Qs::userIsAcademic())
-                    <li class="nav-item nav-item-submenu {{ in_array(Route::currentRouteName(), ['tt.index', 'ttr.edit', 'ttr.show', 'ttr.manage']) ? 'nav-item-expanded nav-item-open' : '' }} ">
+                    <li class="nav-item nav-item-submenu {{ in_array(Route::currentRouteName(), ['tt.index', 'ttr.edit', 'ttr.show', 'ttr.manage', 'students.notify']) ? 'nav-item-expanded nav-item-open' : '' }} ">
                         <a href="#" class="nav-link"><i class="icon-graduation2"></i> <span> Academics</span></a>
 
                         <ul class="nav nav-group-sub" data-submenu-title="Manage Academics">
 
                         {{--Timetables--}}
                             <li class="nav-item"><a href="{{ route('tt.index') }}" class="nav-link {{ in_array(Route::currentRouteName(), ['tt.index']) ? 'active' : '' }}">Timetables</a></li>
+                            <li class="nav-item"><a href="{{ route('students.notify') }}" class="nav-link {{ in_array(Route::currentRouteName(), ['students.notify']) ? 'active' : '' }}">Notifications</a></li>
+
                         </ul>
                     </li>
                     @endif
 
                 {{--Administrative--}}
                 @if(Qs::userIsAdministrative())
-                    <li class="nav-item nav-item-submenu {{ in_array(Route::currentRouteName(), ['payments.index', 'payments.create', 'payments.invoice', 'payments.receipts', 'payments.edit', 'payments.manage', 'payments.show',]) ? 'nav-item-expanded nav-item-open' : '' }} ">
+                    <li class="nav-item nav-item-submenu {{ in_array(Route::currentRouteName(), ['payments.index', 'payments.create', 'payments.invoice', 'payments.receipts', 'payments.edit', 'payments.manage', 'payments.show', 'payments.payment_reports']) ? 'nav-item-expanded nav-item-open' : '' }} ">
                         <a href="#" class="nav-link"><i class="icon-office"></i> <span> Administrative</span></a>
 
                         <ul class="nav nav-group-sub" data-submenu-title="Administrative">
@@ -83,7 +85,12 @@
                                     <li class="nav-item"><a href="{{ route('payments.manage') }}" class="nav-link {{ in_array(Route::currentRouteName(), ['payments.manage', 'payments.invoice', 'payments.receipts']) ? 'active' : '' }}">Student Payments</a></li>
 
                                 </ul>
+                                
+                                <!-- <li class="nav-item"><a href="{{ route('payments.payment_reports') }}" class="nav-link {{ Route::is('payments.payment_reports') ? 'active' : '' }}">Payment Reports</a></li> -->
+                                <li class="nav-item"><a href="{{ route('payments.payment_reports') }}" class="nav-link {{ in_array(Route::currentRouteName(), ['payments.manage', 'payments.invoice', 'payments.receipts', 'payments.payment_reports']) ? 'active' : '' }}">Payment Reports</a></li>
+                                <li class="nav-item"><a href="{{ route('payments.payment_reports') }}" class="nav-link {{ in_array(Route::currentRouteName(), ['payments.manage', 'payments.invoice', 'payments.receipts', 'payments.payment_reports']) ? 'active' : '' }}">Payment Defaulters</a></li>
 
+                                
                             </li>
                             @endif
                         </ul>

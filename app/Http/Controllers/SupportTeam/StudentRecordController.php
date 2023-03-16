@@ -4,6 +4,8 @@ namespace App\Http\Controllers\SupportTeam;
 
 use App\Helpers\Qs;
 use App\Helpers\Mk;
+use App\Helpers\Http;
+
 use App\Http\Requests\Student\StudentRecordCreate;
 use App\Http\Requests\Student\StudentRecordUpdate;
 use App\Repositories\SettingRepo;
@@ -25,6 +27,8 @@ use App\User;
 
 use App\Models\ApplicantRecord;
 use App\Models\StudentRecord;
+
+use Datatables;
 use DB;
 
 class StudentRecordController extends Controller
@@ -97,7 +101,7 @@ class StudentRecordController extends Controller
         return Qs::jsonStoreOk();
     }
 
-    public function saveAdmition(StudentRecordCreate $req)
+    public function saveAdmission(StudentRecordCreate $req)
     {
         // dd($req);
        $data =  $req->only(Qs::getUserRecord());
@@ -137,6 +141,10 @@ class StudentRecordController extends Controller
             $applicant->application_status = "admitted";
             $applicant->admission_id  = $std->id;
             $applicant->save();
+
+            //send sms
+            $data = Http::get('https://api.ebulksms.com:8080/sendsms?username=eiemmieguy93@gmail.com&apikey=7c0f29d2e47c1b7fd49b8ca0ad0c1c6f4143a97e&sender='.'Starlet'.'&messagetext=Dear '.$applicant->fullname.' you have been offered admission to &flash=0&recipients='.$applicant->phone);
+            $posts = json_decode($data->getBody()->getContents());
 
             return Qs::jsonStoreOk();
         } catch (Throwable $e) {
@@ -186,9 +194,9 @@ class StudentRecordController extends Controller
                             // Create user access
                             $user           = new User;
                             $user->name     = $results[$i][13];
-                            $user->email    = $results[$i][11];
+                            $user->email    = /*$results[$i][11];*/ strtolower($results[$i][2].'@starletschools.com'); 
                             $user->code     = $results[$i][12];
-                            $user->username = strtoupper(Qs::getAppCode().'/'.'ST'.'/'.$results[$i][8].'/'.($results[$i][2] ?: mt_rand(1000, 99999)));
+                            $user->username = strtoupper(Qs::getAppCode().'/'.$results[$i][8].'/'.($results[$i][2] ?: mt_rand(1000, 99999)));
                             $user->user_type = $results[$i][14];
                             $user->dob      = $results[$i][15];
                             $user->gender   = $results[$i][16];
@@ -479,4 +487,102 @@ class StudentRecordController extends Controller
         return view('pages.support_team.application.admit', compact('data'))->render();
     }
 
+      /**
+     * Display a listing of the resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function notification()
+    {
+        // dd('here');
+        $today_date = \Carbon\Carbon::now();
+        if(request()->ajax())
+        {
+
+            $data = DB::table('student_records')
+            ->join('my_classes', 'my_classes.id', '=', 'student_records.my_class_id')
+            ->join('users', 'users.id', '=', 'student_records.user_id')
+            ->select('student_records.id As id', 'users.name As full_name', 'my_classes.name As class', 'student_records.adm_no As std_adm_no', 
+            );
+            // dd(count($data));
+
+            return Datatables::of($data)
+                    ->addColumn('id', function($data){
+                        $button = $data->id;
+                        return $button;
+                    })
+                    ->filterColumn('full_name', function ($query, $keyword) {
+                        $keywords = trim($keyword);
+                        $query->whereRaw("CONCAT(fullname) like ?", ["%{$keywords}%"]);
+                    })
+                    ->make(true);
+        }
+        
+        $s = $this->setting->all();
+        $data['my_classes'] = $this->my_class->all();
+        $data['s'] = $s->flatMap(function($s){
+            return [$s->type => $s->description];
+        });
+        // dd($data['my_classes']);       
+        return view('pages.support_team.students.notification', compact('data'));
+    }
+
+    public function getStudents(Request $request)
+    {
+        // if($request->to){dd($request->to);}
+        
+
+        if(request()->ajax())
+        {
+            
+            $data = DB::table('student_records')
+            ->join('my_classes', 'my_classes.id', '=', 'student_records.my_class_id')
+            ->join('users', 'users.id', '=', 'student_records.user_id')
+            ->select('student_records.id As id', 'users.name As full_name', 'my_classes.name As class', 'student_records.adm_no As std_adm_no', 
+            );
+
+            if($request->session){
+                $data = $data->where('payment_records.year', "=", $request->session);
+                // dd($data);
+            }
+            if($request->my_class_id){
+                $data = $data->where('student_records.my_class_id', "=", $request->my_class_id);
+            }
+        
+
+            return Datatables::of($data)
+            ->addColumn('id', function($data){
+                $button = $data->id;
+                return $button;
+            })
+            ->filterColumn('full_name', function ($query, $keyword) {
+                $keywords = trim($keyword);
+                $query->whereRaw("CONCAT(fullname) like ?", ["%{$keywords}%"]);
+            })->make(true);
+
+        }
+            
+    }
+
+    public function nottifyStudents(Request $request)
+    {
+        // dd($request->message);
+        $count = 0;
+        foreach($request->defaulters as $id){
+            //get payment_record
+            $pr =  DB::table('student_records')
+                    ->join('users', 'users.id', '=', 'student_records.my_parent_id')
+                    ->select('users.phone', 'users.phone2')
+                    ->first();
+            if($pr->phone != null || $pr->phone2)
+            {
+                $data = Http::get('https://api.ebulksms.com:8080/sendsms?username=eiemmieguy93@gmail.com&apikey=7c0f29d2e47c1b7fd49b8ca0ad0c1c6f4143a97e&sender='.'Starlet'.'&messagetext='.$request->message.'&flash=0&recipients='.$pr->phone.','.$pr->phone2);
+                $posts = json_decode($data->getBody()->getContents());
+            }
+            $count++;
+        }
+        // dd($request->message);
+
+        return json_encode($count);
+    }
 }

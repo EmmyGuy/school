@@ -59,14 +59,14 @@
                                 <label for="amount">@lang('Pay Fee For')</label>
                                 <select class="form-control" name="charge_field" id='charge_field'  onchange="SetAmount()" required>
                                   @foreach ($uncleared as $uc)
-                                    <option value="{{ $uc->balance ?: $uc->payment->amount }}" data-id="{{ $uc->id }}">{{ $uc->balance ?: $uc->payment->amount }} -- {{ $uc->payment->title }}</option>
+                                    <option  value="{{ $uc->balance ?: $uc->payment->amount }}" data-id="{{ $uc->id }}">{{ $uc->balance ?: $uc->payment->amount }} -- {{ $uc->payment->title }}</option>
                                     
                                   @endforeach
                                 </select>
                               </div>
 
                               <input type="hidden" id="paymet_id" name="paymet_id" value="">
-                              <input type="hidden" id="email"  name="email" value="{{ $sr->user->email }}" />
+                              <input type="hidden" id="email"  name="email" value="{{ $parent_email }}" />
 
                               <div class="form-group">
                                 <div class="input-group">
@@ -128,6 +128,14 @@
           }
       });
     });
+  });
+
+  $('#amount').on('change', function() {
+    // alert( this.value );
+    if(document.getElementById("charge_field").value < this.value){
+      swal('Danger: payable amount cannot be more than charges!');
+      this.value = null;
+    }
   });
 
 

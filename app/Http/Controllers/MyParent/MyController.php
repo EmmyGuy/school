@@ -30,6 +30,7 @@ use App\Http\Requests;
 
 use App\Models\ApplicantRecord;
 use App\Models\StudentRecord;
+use App\Models\Application;
 
 class MyController extends Controller
 {
@@ -54,6 +55,19 @@ class MyController extends Controller
 
     public function manage($class_id = NULL)
     {
+        
+        $application_check = Application::where('status', 'open')->get();
+
+        if(count($application_check) < 0 ){
+            \Session::flash('success', ' application is closed.');
+
+            return redirect()->back();
+        }
+        if(date('Y-m-d H:i:s')  > $application_check[0]->closing_date  ){
+            \Session::flash('success', ' application is closed.');
+
+            return redirect()->back();
+        }
 
         $d['my_classes'] = $this->my_class->all();
         $d['selected'] = false;

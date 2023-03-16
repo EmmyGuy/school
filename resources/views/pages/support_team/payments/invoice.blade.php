@@ -16,7 +16,7 @@
 
         <div class="tab-content">
             <div class="tab-pane fade show active" id="all-uc">
-                <table class="table datatable-button-html5-columns table-responsive">
+                <table class="  ">
                     <thead>
                     <tr>
                         <th>#</th>

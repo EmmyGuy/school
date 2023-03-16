@@ -7,6 +7,8 @@ use App\Http\Controllers\Controller;
 
 use App\Helpers\Qs;
 use App\Helpers\Pay;
+use App\Helpers\Http;
+
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Contracts\Encryption\DecryptException;
@@ -28,6 +30,7 @@ use DB;
 use App\Models\Payment;
 use App\Models\PaymentRecord;
 use App\Models\ApplicantPayment;
+use App\User;
 use App\Fee;
 use App\ApiKeys;
 use App\Customer;
@@ -70,15 +73,17 @@ class CashierController extends Controller
         $inv = $year ? $this->pay->getAllMyPR($st_id, $year) : $this->pay->getAllMyPR($st_id);
 
         $d['sr'] = $this->student->findByUserId($st_id)->first();
+        $d['parent_email'] = auth()->user()->email;
         $pr = $inv->get();
-        $d['uncleared'] = $pr->where('paid', 0);
+        $d['uncleared'] =  count($pr->where('balance', '>', 0)) > 0  ? $pr->where('balance', '>', 0) : $pr->where('balance', null);
         $d['cleared'] = $pr->where('paid', 1);
+        // dd($d['uncleared']);
         return view('pages.parent.payment', $d);
     }
 
 
     public function store(Request $request){
-        //  dd($request);
+
         $paymentRref = Paystack::genTranxRef();
         $amount = $request->amount > 0 ? intval($request->amount * 100) : intval($request->charge_field * 100);
         $chargeField = $request->charge_field;
@@ -236,6 +241,7 @@ class CashierController extends Controller
         
         if(!$st_id) {return Qs::goWithDanger();}
 
+
         $inv = $year ? $this->pay->getAllMyPR($st_id, $year) : $this->pay->getAllMyPR($st_id);
 
         $d['sr'] = $this->student->findByUserId($st_id)->first();
@@ -337,132 +343,132 @@ class CashierController extends Controller
         }
     }
 
-    // public function getInvoice(Request $request)
-    // {
-    //     // return response()->json($request);
-    //     dd($request);
+    public function getInvoice(Request $request)
+    {
+        // return response()->json($request);
+        // dd($request);
 
-    //     $user = auth()->user();
-    //     $splitName = explode(' ', $user->name, 2);
-    //     $apiDetail = ApiKeys::where('school_id', $user->school_id)->first();
+        $user = auth()->user();
+        $splitName = explode(' ', $user->name, 2);
+        $apiDetail = ApiKeys::where('school_id', $user->school_id)->first();
 
-    //     //Decrypt and update environment variable with keys
-    //     $publicKey = Crypt::decryptString($apiDetail->public);
-    //     $privateKey = Crypt::decryptString($apiDetail->private);
+        //Decrypt and update environment variable with keys
+        $publicKey = Crypt::decryptString($apiDetail->public);
+        $privateKey = Crypt::decryptString($apiDetail->private);
 
-    //     $this->setEnvironmentValue('PAYSTACK_PUBLIC_KEY', $publicKey);
-    //     $this->setEnvironmentValue('PAYSTACK_SECRET_KEY', $privateKey);
-    //     $secret = config('paystack.secretKey');
+        $this->setEnvironmentValue('PAYSTACK_PUBLIC_KEY', $publicKey);
+        $this->setEnvironmentValue('PAYSTACK_SECRET_KEY', $privateKey);
+        $secret = config('paystack.secretKey');
 
-    //     //query paystack api keys from db for auth user
-    //     if($apiDetail == null){
-    //         return back()->with(['error'=>true,'status'=>__('Please contact CacTus Analytics for Payment Setup!')]);
-    //     }
+        //query paystack api keys from db for auth user
+        if($apiDetail == null){
+            return back()->with(['error'=>true,'status'=>__('Please contact CacTus Analytics for Payment Setup!')]);
+        }
 
-    //     //check if customer exist: No, create else jus get create invoice
-    //     $customerCheck = Customer::where('user_id', $user->id)->first();
+        //check if customer exist: No, create else jus get create invoice
+        $customerCheck = Customer::where('user_id', $user->id)->first();
 
-    //     if($customerCheck == null){
-    //         $url = "https://api.paystack.co/customer";
+        if($customerCheck == null){
+            $url = "https://api.paystack.co/customer";
 
 
-    //         $fields = [
-    //             "email"      => $user->email,
-    //             "first_name" => $splitName[0],
-    //             "last_name"  => $splitName[1],
-    //             "phone"      => $user->phone_number,
-    //         ];
+            $fields = [
+                "email"      => $user->email,
+                "first_name" => $splitName[0],
+                "last_name"  => $splitName[1],
+                "phone"      => $user->phone_number,
+            ];
 
-    //         $fields_string = http_build_query($fields);
-    //         //open connection
-    //         $ch = curl_init();
+            $fields_string = http_build_query($fields);
+            //open connection
+            $ch = curl_init();
 
-    //         //set the url, number of POST vars, POST data
-    //         curl_setopt($ch,CURLOPT_URL, $url);
-    //         curl_setopt($ch,CURLOPT_POST, true);
-    //         curl_setopt($ch,CURLOPT_POSTFIELDS, $fields_string);
-    //         curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer $secret"]);
+            //set the url, number of POST vars, POST data
+            curl_setopt($ch,CURLOPT_URL, $url);
+            curl_setopt($ch,CURLOPT_POST, true);
+            curl_setopt($ch,CURLOPT_POSTFIELDS, $fields_string);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer $secret"]);
 
-    //         //So that curl_exec returns the contents of the cURL; rather than echoing it
-    //         curl_setopt($ch,CURLOPT_RETURNTRANSFER, true);
+            //So that curl_exec returns the contents of the cURL; rather than echoing it
+            curl_setopt($ch,CURLOPT_RETURNTRANSFER, true);
 
-    //         //execute post
-    //         $result = curl_exec($ch);
+            //execute post
+            $result = curl_exec($ch);
 
-    //         // var_dump($result);
-    //         //return response()->json($result);
-    //         if($result->status == true){
-    //             $newCustomer = new Customer;
-    //             $newCustomer->user_id = auth()->user()->id;
-    //             $newCustomer->customer_code = $result->data->customer_code;
+            // var_dump($result);
+            //return response()->json($result);
+            if($result->status == true){
+                $newCustomer = new Customer;
+                $newCustomer->user_id = auth()->user()->id;
+                $newCustomer->customer_code = $result->data->customer_code;
 
-    //             try {
-    //                 $newCustomer->save();
-    //             } catch (\Exception $e) {
-    //                 return response()->json($e);
-    //             }
-    //         }
-    //     }
+                try {
+                    $newCustomer->save();
+                } catch (\Exception $e) {
+                    return response()->json($e);
+                }
+            }
+        }
 
-    //     $invoiceUrl = "https://api.paystack.co/paymentrequest";
+        $invoiceUrl = "https://api.paystack.co/paymentrequest";
 
-    //     $fields = [
-    //         "description" => "Shool Fee Invoice",
-    //         "line_items"=> [
-    //         ["name" => "Shool Fee Invoice", "amount" => $request->amount * 100],
-    //         ],
-    //         "tax" => [
-    //         ["name" => "VAT", "amount" => 100 * 100]
-    //         ],
-    //         "customer" => $customerCheck->customer_code,
-    //         "due_date" => "2020-07-08"
-    //         ];
-    //         // return response()->json($fields);
+        $fields = [
+            "description" => "Shool Fee Invoice",
+            "line_items"=> [
+            ["name" => "Shool Fee Invoice", "amount" => $request->amount * 100],
+            ],
+            "tax" => [
+            ["name" => "VAT", "amount" => 100 * 100]
+            ],
+            "customer" => $customerCheck->customer_code,
+            "due_date" => "2020-07-08"
+            ];
+            // return response()->json($fields);
 
-    //     $fields_string = http_build_query($fields);
-    //     //open connection
-    //     $ch = curl_init();
+        $fields_string = http_build_query($fields);
+        //open connection
+        $ch = curl_init();
 
-    //     //set the url, number of POST vars, POST data
-    //     curl_setopt($ch,CURLOPT_URL, $invoiceUrl);
-    //     curl_setopt($ch,CURLOPT_POST, true);
-    //     curl_setopt($ch,CURLOPT_POSTFIELDS, $fields_string);
-    //     curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer $secret"]);
+        //set the url, number of POST vars, POST data
+        curl_setopt($ch,CURLOPT_URL, $invoiceUrl);
+        curl_setopt($ch,CURLOPT_POST, true);
+        curl_setopt($ch,CURLOPT_POSTFIELDS, $fields_string);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: Bearer $secret"]);
 
-    //     //So that curl_exec returns the contents of the cURL; rather than echoing it
-    //     curl_setopt($ch,CURLOPT_RETURNTRANSFER, true);
-    //     //execute post
-    //     $resultCustomerCreate = curl_exec($ch);
-    //     $resultCustomerCreate = json_decode($resultCustomerCreate);
-    //     //var_dump($resultCustomerCreate);
-    //     if($resultCustomerCreate->status == true){
+        //So that curl_exec returns the contents of the cURL; rather than echoing it
+        curl_setopt($ch,CURLOPT_RETURNTRANSFER, true);
+        //execute post
+        $resultCustomerCreate = curl_exec($ch);
+        $resultCustomerCreate = json_decode($resultCustomerCreate);
+        //var_dump($resultCustomerCreate);
+        if($resultCustomerCreate->status == true){
 
-    //         $client = new Buyer([
-    //             'name'          => $user->name,
-    //             'custom_fields' => [
-    //                 'email' => $user->email,
-    //             ],
-    //         ]);
+            $client = new Buyer([
+                'name'          => $user->name,
+                'custom_fields' => [
+                    'email' => $user->email,
+                ],
+            ]);
 
-    //         $item = (new InvoiceItem())->title('Service 1')->pricePerUnit(2);
+            $item = (new InvoiceItem())->title('Service 1')->pricePerUnit(2);
 
-    //         $invoice = Invoice::make()
-    //             ->buyer($client)
-    //             // ->discountByPercent(10)
-    //             ->taxRate(100)
-    //             //->shipping(1.99)
-    //             ->addItem($item);
+            $invoice = Invoice::make()
+                ->buyer($client)
+                // ->discountByPercent(10)
+                ->taxRate(100)
+                //->shipping(1.99)
+                ->addItem($item);
 
-    //         $url =  $invoice->url();
-    //         $return_array = compact('url');
-    //         return json_encode($return_array);
+            $url =  $invoice->url();
+            $return_array = compact('url');
+            return json_encode($return_array);
 
-    //     }else {
-    //         $message = "Oops! something went wrong!!";
-    //         return json_encode($message);
-    //     }
-    // }
-     //
+        }else {
+            $message = "Oops! something went wrong!!";
+            return json_encode($message);
+        }
+    }
+
     /**
      * Display a listing of the resource.
      *
@@ -479,7 +485,6 @@ class CashierController extends Controller
             ->join('payments', 'payments.id', '=', 'payment_records.payment_id')
             ->join('student_records', 'student_records.user_id', '=', 'payment_records.student_id')
             ->join('users', 'users.id', '=', 'student_records.user_id')
-            // ->where('departments.id', "=", $employee->department_id)
             ->select('users.name As fullname','payments.title As title', 'payments.ref_no As ref_no','payments.description','payments.year As year',
                         'receipts.amt_paid As amt_paid', 'receipts.created_at As date_of_pay', 'student_records.adm_no As std_adm_no', 
             
@@ -565,5 +570,118 @@ class CashierController extends Controller
             
         }
             
+    }
+
+    /**
+     * Display a listing of the resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function defaulters()
+    {
+        // dd('here');
+        $today_date = \Carbon\Carbon::now();
+        if(request()->ajax())
+        {
+
+            $data = DB::table('payment_records')
+            // ->join('payment_records', 'payment_records.id', '=', 'receipts.pr_id')
+            ->join('payments', 'payments.id', '=', 'payment_records.payment_id')
+            ->join('student_records', 'student_records.user_id', '=', 'payment_records.student_id')
+            ->join('my_classes', 'my_classes.id', '=', 'student_records.my_class_id')
+            ->join('users', 'users.id', '=', 'student_records.user_id')
+            ->where('payment_records.paid', 0)
+            ->select('payment_records.id As id', 'users.name As full_name','payments.title As title', 'my_classes.name As ref_no','payments.description','payments.year As year',
+                    'payment_records.balance As balance', 'payment_records.created_at As date_of_pay','student_records.adm_no As std_adm_no', 
+            
+            );
+            // dd(count($data));
+
+            return Datatables::of($data)
+                    ->addColumn('id', function($data){
+                        $button = $data->id;
+                        return $button;
+                    })
+                    ->filterColumn('full_name', function ($query, $keyword) {
+                        $keywords = trim($keyword);
+                        $query->whereRaw("CONCAT(fullname) like ?", ["%{$keywords}%"]);
+                    })
+                    ->make(true);
+        }
+        
+        $s = $this->setting->all();
+        $data['my_classes'] = $this->my_class->all();
+        $data['s'] = $s->flatMap(function($s){
+            return [$s->type => $s->description];
+        });
+        // dd($data['my_classes']);       
+        return view('pages.support_team.payments.defaulters', compact('data'));
+    }
+
+    public function getDefaulterReports(Request $request)
+    {
+        // if($request->to){dd($request->to);}
+        
+
+        if(request()->ajax())
+        {
+            
+            $data = DB::table('payment_records')
+            // ->join('payment_records', 'payment_records.id', '=', 'receipts.pr_id')
+            ->join('payments', 'payments.id', '=', 'payment_records.payment_id')
+            ->join('student_records', 'student_records.user_id', '=', 'payment_records.student_id')
+            ->join('my_classes', 'my_classes.id', '=', 'student_records.my_class_id')
+            ->join('users', 'users.id', '=', 'student_records.user_id')
+            ->where('payment_records.paid', 0)
+            ->select('payment_records.id As id', 'users.name As full_name','payments.title As title', 'my_classes.name As ref_no','payments.description','payments.year As year',
+                    'payment_records.balance As balance', 'payment_records.created_at As date_of_pay','student_records.adm_no As std_adm_no', 
+            
+            );
+
+            if($request->session){
+                $data = $data->where('payment_records.year', "=", $request->session);
+                // dd($data);
+            }
+            if($request->my_class_id){
+                $data = $data->where('student_records.my_class_id', "=", $request->my_class_id);
+            }
+        
+
+            return Datatables::of($data)
+            ->addColumn('id', function($data){
+                $button = $data->id;
+                return $button;
+            })
+            ->filterColumn('full_name', function ($query, $keyword) {
+                $keywords = trim($keyword);
+                $query->whereRaw("CONCAT(fullname) like ?", ["%{$keywords}%"]);
+            })->make(true);
+
+        }
+            
+    }
+
+    public function nottifyDefaulters(Request $request)
+    {
+        // dd($request->message);
+        $count = 0;
+        foreach($request->defaulters as $id){
+            //get payment_record
+            $pr =  DB::table('payment_records')
+                    ->join('payments', 'payments.id', '=', 'payment_records.payment_id')
+                    ->join('student_records', 'student_records.user_id', '=', 'payment_records.student_id')
+                    ->join('users', 'users.id', '=', 'student_records.my_parent_id')
+                    ->select('users.phone', 'users.phone2')
+                    ->first();
+            if($pr->phone != null || $pr->phone2)
+            {
+                $data = Http::get('https://api.ebulksms.com:8080/sendsms?username=eiemmieguy93@gmail.com&apikey=7c0f29d2e47c1b7fd49b8ca0ad0c1c6f4143a97e&sender='.'Starlet'.'&messagetext='.$request->message.'&flash=0&recipients='.$pr->phone.','.$pr->phone2);
+                $posts = json_decode($data->getBody()->getContents());
+            }
+            $count++;
+        }
+        // dd($request->message);
+
+        return json_encode($count);
     }
 }
